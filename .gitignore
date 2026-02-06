@@ -1,0 +1,38 @@
+# ---- Python 缓存与虚拟环境 ----
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# ---- Qt / IDE ----
+.vscode/
+.idea/
+*.pro.user
+*.qmlc
+
+# ---- Arduino PlatformIO 构建产物 (2026-05-18 那次误提交过 1.09MB) ----
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# ---- 运行产物 ----
+*.spec
+*.log
+
+# ---- 渲染中间件 ----
+_record_run/_pages/
+_record_run/_pass1.pdf
+_record_run/_check.pdf
+_record_run/_crop_*.png
+
+# ---- 系统 ----
+Thumbs.db
+desktop.ini
+.DS_Store
