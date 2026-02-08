@@ -1,0 +1,140 @@
+{
+  "settings": {
+    "pump_count": 3,
+    "port_count": 8
+  },
+  "connections": [
+    {
+      "pump_a": 1,
+      "port_a": 1,
+      "pump_b": 2,
+      "port_b": 8
+    },
+    {
+      "pump_a": 2,
+      "port_a": 1,
+      "pump_b": 3,
+      "port_b": 8
+    }
+  ],
+  "liquids": [
+    {
+      "id": "0",
+      "name": "DCM",
+      "pump": 1,
+      "port": 2
+    },
+    {
+      "id": "1",
+      "name": "acetone",
+      "pump": 1,
+      "port": 3
+    },
+    {
+      "id": "2",
+      "name": "NH4Cl",
+      "pump": 1,
+      "port": 4
+    },
+    {
+      "id": "3",
+      "name": "Grignard reagent",
+      "pump": 1,
+      "port": 6
+    },
+    {
+      "id": "4",
+      "name": "THF",
+      "pump": 1,
+      "port": 7
+    },
+    {
+      "id": "5",
+      "name": "propyl carbonochloridate",
+      "pump": 2,
+      "port": 6
+    },
+    {
+      "id": "6",
+      "name": "H2O",
+      "pump": 2,
+      "port": 7
+    }
+  ],
+  "gases": [
+    {
+      "id": "0",
+      "name": "air",
+      "pump": 1,
+      "port": 8
+    },
+    {
+      "id": "1",
+      "name": "air",
+      "pump": 3,
+      "port": 5
+    }
+  ],
+  "containers": [
+    {
+      "id": "0",
+      "name": "reaction bottle",
+      "pump": 1,
+      "port": 5
+    },
+    {
+      "id": "1",
+      "name": "waste",
+      "pump": 2,
+      "port": 2
+    },
+    {
+      "id": "2",
+      "name": "lowerphase collector ",
+      "pump": 2,
+      "port": 3
+    },
+    {
+      "id": "3",
+      "name": "extraction bottle",
+      "pump": 2,
+      "port": 4
+    },
+    {
+      "id": "4",
+      "name": "transit1",
+      "pump": 2,
+      "port": 5
+    },
+    {
+      "id": "5",
+      "name": "rotary evaporator",
+      "pump": 3,
+      "port": 2
+    },
+    {
+      "id": "6",
+      "name": "product bottle",
+      "pump": 3,
+      "port": 3
+    },
+    {
+      "id": "7",
+      "name": "column(to product bottle)",
+      "pump": 3,
+      "port": 4
+    },
+    {
+      "id": "8",
+      "name": "transit2",
+      "pump": 3,
+      "port": 6
+    },
+    {
+      "id": "9",
+      "name": "drying column(to transit2)",
+      "pump": 3,
+      "port": 7
+    }
+  ]
+}

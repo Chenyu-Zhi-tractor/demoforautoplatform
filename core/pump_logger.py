@@ -81,6 +81,16 @@ class PumpLogger:
             self.write(f"  任务类型: 🔌 开关控制")
             self.write(f"  设备名称: {task.get('device_name')}")
             self.write(f"  目标状态: {'开启' if task.get('state') else '关闭'}")
+        elif task_type == 'ika_start':
+            self.write(f"  任务类型: 🌀 IKA 启动搅拌")
+        elif task_type == 'ika_stop':
+            self.write(f"  任务类型: 🌀 IKA 停止搅拌")
+        elif task_type == 'ika_set_speed':
+            self.write(f"  任务类型: 🌀 IKA 设置转速")
+            self.write(f"  目标转速: {task.get('speed', 0)} RPM")
+        elif task_type == 'ika_control':
+            self.write(f"  任务类型: 🌀 IKA 设置并启动")
+            self.write(f"  目标转速: {task.get('speed', 0)} RPM")
         
         self.write(f"")
 
@@ -169,3 +179,29 @@ class PumpLogger:
         self.write("【错误堆栈】")
         self.write(trace_info)
         self.write("=" * 70)
+
+    # ========== IKA 搅拌器专用日志方法 ==========
+    
+    def log_ika_header(self):
+        """记录 IKA 控制头部信息"""
+        self.write("")
+        self.write("-" * 70)
+        self.write("【设备】IKA 旋转搅拌控制器")
+        self.write("-" * 70)
+    
+    def log_ika_command(self, cmd_type, speed=None, port=None):
+        """记录 IKA 命令"""
+        port_str = f" (串口: {port})" if port else ""
+        if speed is not None:
+            self.write(f"    CMD: {cmd_type:<20} 转速: {speed} RPM{port_str}")
+        else:
+            self.write(f"    CMD: {cmd_type:<20}{port_str}")
+    
+    def log_ika_commands_list(self, commands, port=None):
+        """记录 IKA 命令序列"""
+        self.write("-" * 70)
+        self.write("【IKA 执行指令序列】")
+        self.write("-" * 70)
+        for cmd in commands:
+            self.write(f"    CMD: {cmd}")
+        self.write("")

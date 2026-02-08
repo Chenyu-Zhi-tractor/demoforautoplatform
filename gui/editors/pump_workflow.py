@@ -18,9 +18,10 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from .json_editor import UsageMatrixModel, WrappingItemDelegate
 
 # 导入泵控制器
-from core.hardware.serial_driver import PumpController as RealPumpController
-from core.hardware.serial_driver_test import PumpController as MockPumpController
-from core.hardware.parse_cmd import parse_cmd
+# 虚拟调试
+from core.hardware.serial_driver_test import PumpController
+# 真实模式
+# from core.hardware.serial_driver import PumpController
 from core.pump_logger import PumpLogger
 
 class TaskItemWidget(QWidget):
@@ -176,7 +177,6 @@ class PumpWorkflowWidget(QWidget):
         self.containers = []
         self.gases = []
         self._pump_controller = None  # 泵控制器实例（延迟初始化）
-        self._virtual_mode = True  # 默认为虚拟调试模式
         self._setup_ui()
     
     def _setup_ui(self):
@@ -222,40 +222,6 @@ class PumpWorkflowWidget(QWidget):
         self.page_execute = QWidget()
         self._setup_execute_page()
         self.stack.addWidget(self.page_execute)
-    
-    def _toggle_virtual_mode(self):
-        """切换虚拟/真实模式"""
-        self._virtual_mode = self.chk_virtual_mode.isChecked()
-        if self._virtual_mode:
-            self.chk_virtual_mode.setText("🐛 虚拟模式")
-            self.chk_virtual_mode.setStyleSheet("""
-                QPushButton {
-                    background-color: #f39c12;
-                    color: white;
-                    font-weight: bold;
-                    padding: 10px;
-                    font-size: 12px;
-                }
-                QPushButton:checked {
-                    background-color: #27ae60;
-                }
-                QPushButton:hover { background-color: #d68910; }
-            """)
-        else:
-            self.chk_virtual_mode.setText("⚙️ 真实模式")
-            self.chk_virtual_mode.setStyleSheet("""
-                QPushButton {
-                    background-color: #e74c3c;
-                    color: white;
-                    font-weight: bold;
-                    padding: 10px;
-                    font-size: 12px;
-                }
-                QPushButton:checked {
-                    background-color: #27ae60;
-                }
-                QPushButton:hover { background-color: #c0392b; }
-            """)
     
     def _setup_config_page(self):
         """设置配置编辑页面"""
@@ -372,26 +338,6 @@ class PumpWorkflowWidget(QWidget):
         log_layout.addRow("文件名:", self.log_name_edit)
         
         right_panel.addWidget(log_group)
-        
-        # 虚拟模式开关
-        self.chk_virtual_mode = QPushButton("🐛 虚拟模式")
-        self.chk_virtual_mode.setCheckable(True)
-        self.chk_virtual_mode.setChecked(True)
-        self.chk_virtual_mode.setStyleSheet("""
-            QPushButton {
-                background-color: #f39c12;
-                color: white;
-                font-weight: bold;
-                padding: 10px;
-                font-size: 12px;
-            }
-            QPushButton:checked {
-                background-color: #27ae60;
-            }
-            QPushButton:hover { background-color: #d68910; }
-        """)
-        self.chk_virtual_mode.clicked.connect(self._toggle_virtual_mode)
-        right_panel.addWidget(self.chk_virtual_mode)
         
         # 执行按钮
         self.btn_execute = QPushButton("▶️ 开始执行")
@@ -676,8 +622,6 @@ class PumpWorkflowWidget(QWidget):
         )
         
         if reply == QMessageBox.StandardButton.Yes:
-            # 根据当前模式选择控制器类
-            self._pump_controller_class = MockPumpController if self._virtual_mode else RealPumpController
             self._run_pump_tasks(tasks, full_path)
     
     def _run_pump_tasks(self, tasks, log_path):
@@ -698,7 +642,7 @@ class PumpWorkflowWidget(QWidget):
                 # 只在第一次执行时创建和初始化泵控制器
                 if self._pump_controller is None:
                     logger.log_system_action("创建泵控制器")
-                    self._pump_controller = self._pump_controller_class(
+                    self._pump_controller = PumpController(
                         port='COM11', 
                         config_dict=self.config_data  # 传入当前界面的配置数据
                     )
