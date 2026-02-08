@@ -17,12 +17,8 @@ from PyQt6.QtCore import Qt, pyqtSignal
 
 from .json_editor import UsageMatrixModel, WrappingItemDelegate
 
-# 导入泵控制器
-# 虚拟调试
-from core.hardware.serial_driver_test import PumpController
-# 真实模式
-# from core.hardware.serial_driver import PumpController
 from core.pump_logger import PumpLogger
+from core.hardware.driver_manager import DriverManager
 
 class TaskItemWidget(QWidget):
     """单个移液任务项"""
@@ -642,7 +638,8 @@ class PumpWorkflowWidget(QWidget):
                 # 只在第一次执行时创建和初始化泵控制器
                 if self._pump_controller is None:
                     logger.log_system_action("创建泵控制器")
-                    self._pump_controller = PumpController(
+                    PumpClass = DriverManager.instance().get_pump_controller_class()
+                    self._pump_controller = PumpClass(
                         port='COM11', 
                         config_dict=self.config_data  # 传入当前界面的配置数据
                     )

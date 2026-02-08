@@ -5,7 +5,7 @@ from datetime import datetime
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QFileDialog, QLabel, QMessageBox, QTabWidget,
-    QLineEdit, QSplitter
+    QLineEdit, QSplitter, QCheckBox
 )
 from PyQt6.QtCore import Qt
 
@@ -14,19 +14,15 @@ from gui.editors.json_editor import JsonEditorWidget
 from gui.dialogs.setup_dialog import SetupDialog
 from gui.editors.pump_editor import PumpEditorWidget
 from gui.editors.ika_editor import IKAEditorWidget
+from gui.editors.coolingbath_editor import CoolingBathEditorWidget
 from gui.task_queue_widget import TaskQueueWidget
 from gui.task_queue import task_queue, TaskType
 
 # 导入日志器
 from core.pump_logger import PumpLogger
 
-# 导入硬件驱动
-# 虚拟调试模式
-from core.hardware.serial_driver_test import PumpController
-from core.hardware.ikaset_test import StirController
-# 真实模式请使用：
-# from core.hardware.serial_driver import PumpController
-# from core.hardware.ikaset import StirController
+# 导入硬件驱动管理器
+from core.hardware.driver_manager import DriverManager
 
 
 class MainWindow(QMainWindow):
@@ -63,6 +59,17 @@ class MainWindow(QMainWindow):
         self.btn_save_as.setEnabled(False)
         self.btn_save_as.setStyleSheet("padding: 5px 15px; font-weight: bold;")
         toolbar.addWidget(self.btn_save_as)
+        
+        # === 虚拟模式切换 ===
+        toolbar.addSpacing(20)
+        self.chk_virtual = QCheckBox("🛠️ 虚拟模式")
+        self.chk_virtual.setChecked(DriverManager.instance().is_virtual_mode())
+        self.chk_virtual.setStyleSheet("""
+            QCheckBox { color: #f1c40f; font-weight: bold; font-size: 14px; }
+            QCheckBox::indicator { width: 18px; height: 18px; }
+        """)
+        self.chk_virtual.toggled.connect(self._on_virtual_mode_toggled)
+        toolbar.addWidget(self.chk_virtual)
         
         toolbar.addStretch()
         
@@ -129,6 +136,11 @@ class MainWindow(QMainWindow):
         self.ika_editor = IKAEditorWidget()
         self.ika_editor.task_added.connect(self._on_task_added)
         self.task_tabs.addTab(self.ika_editor, "🌀 IKA任务")
+
+        # 冷却浴任务配置
+        self.cooling_editor = CoolingBathEditorWidget()
+        # 目前主要用于手动控制，没有task_added信号
+        self.task_tabs.addTab(self.cooling_editor, "❄️ 冷却浴")
         
         left_splitter.addWidget(self.task_tabs)
         left_splitter.setSizes([600, 300])  # 上方占2/3，下方占1/3
@@ -182,6 +194,25 @@ class MainWindow(QMainWindow):
         
         # 设置默认日志路径
         self._set_default_log_path()
+        
+    def _on_virtual_mode_toggled(self, checked):
+        """切换虚拟模式"""
+        DriverManager.instance().set_virtual_mode(checked)
+        # 清除现有控制器连接，以便下次使用时重新创建
+        if self._pump_controller:
+            try:
+                # 尝试关闭之前的连接（如果有close方法）
+                if hasattr(self._pump_controller, 'close'):
+                    self._pump_controller.close()
+            except:
+                pass
+            self._pump_controller = None
+            
+        self._stir_controller = None
+        
+        mode_str = "虚拟模式" if checked else "真实模式 (Serial)"
+        self.statusBar().showMessage(f"已切换到: {mode_str}")
+        QMessageBox.information(self, "模式切换", f"已切换到 {mode_str}\n下一次执行任务时将使用新的驱动。")
     
     def _set_default_log_path(self):
         """设置默认日志路径"""
@@ -302,6 +333,8 @@ class MainWindow(QMainWindow):
                             self._execute_ika_set_speed(task, logger, i)
                         elif task.task_type == TaskType.IKA_CONTROL:
                             self._execute_ika_control(task, logger, i)
+                        elif task.task_type == TaskType.COOLING_BATH_SET_TEMP:
+                            self._execute_cooling_bath_set_temp(task, logger, i)
                         
                         completed += 1
                         
@@ -364,7 +397,8 @@ class MainWindow(QMainWindow):
         
         if self._pump_controller is None:
             logger.log_system_action("创建泵控制器")
-            self._pump_controller = PumpController(
+            PumpClass = DriverManager.instance().get_pump_controller_class()
+            self._pump_controller = PumpClass(
                 port=self.pump_editor.get_port(),
                 config_dict=self.config_data
             )
@@ -391,7 +425,8 @@ class MainWindow(QMainWindow):
         logger.log_ika_command("START_4", port=port)
         
         if self._stir_controller is None:
-            self._stir_controller = StirController(port=port)
+            StirClass = DriverManager.instance().get_stir_controller_class()
+            self._stir_controller = StirClass(port=port)
         self._stir_controller.set_logger(lambda x: None)
         
         if self._stir_controller.start():
@@ -406,7 +441,8 @@ class MainWindow(QMainWindow):
         logger.log_ika_command("STOP_4", port=port)
         
         if self._stir_controller is None:
-            self._stir_controller = StirController(port=port)
+            StirClass = DriverManager.instance().get_stir_controller_class()
+            self._stir_controller = StirClass(port=port)
         self._stir_controller.set_logger(lambda x: None)
         
         if self._stir_controller.stop():
@@ -423,7 +459,8 @@ class MainWindow(QMainWindow):
         logger.log_ika_command(f"OUT_SP_4 {speed}", speed=speed, port=port)
         
         if self._stir_controller is None:
-            self._stir_controller = StirController(port=port)
+            StirClass = DriverManager.instance().get_stir_controller_class()
+            self._stir_controller = StirClass(port=port)
         self._stir_controller.set_logger(lambda x: None)
         
         if self._stir_controller.set_speed(speed):
@@ -441,7 +478,8 @@ class MainWindow(QMainWindow):
         logger.log_ika_command("START_4", port=port)
         
         if self._stir_controller is None:
-            self._stir_controller = StirController(port=port)
+            StirClass = DriverManager.instance().get_stir_controller_class()
+            self._stir_controller = StirClass(port=port)
         self._stir_controller.set_logger(lambda x: None)
         
         if self._stir_controller.control(speed):
@@ -449,6 +487,28 @@ class MainWindow(QMainWindow):
         else:
             raise Exception("设置并启动失败")
     
+    def _execute_cooling_bath_set_temp(self, task, logger, index):
+        """执行冷却浴设温"""
+        port = self.cooling_editor.get_port()
+        temp = task.params.get('temp', 0)
+        
+        # 记录日志 (这里复用 generic 或 ika 的 log 方法比较勉强，建议扩展 Logger 但这里先简化处理)
+        logger.write(f"--> [冷却浴] 端口:{port} 设定温度:{temp}℃")
+        
+        # 获取驱动类
+        BathClass = DriverManager.instance().get_cooling_bath_controller_class()
+        # 创建临时控制器 (或者您可以像 pump/ika 那样在 self 中保持实例)
+        controller = BathClass(port=port)
+        controller.set_logger(lambda x: None) # 避免控制台刷屏
+        
+        try:
+            if controller.set_temperature(temp):
+                logger.log_generic_success(index, f"冷却浴温度已设定为 {temp} ℃")
+            else:
+                raise Exception("设定温度失败 (无响应或响应错误)")
+        finally:
+            controller.close()
+
     # ==================== 文件操作 ====================
     
     def new_file(self):

@@ -7,11 +7,8 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import pyqtSignal
 
-# 导入 IKA 搅拌控制模块
-# 真实模式
-# from core.hardware.ikaset import StirController
-# 虚拟调试模式
-from core.hardware.ikaset_test import StirController
+# 导入硬件驱动管理器
+from core.hardware.driver_manager import DriverManager
 
 # 导入统一任务队列
 from gui.task_queue import task_queue
@@ -212,7 +209,8 @@ class IKAEditorWidget(QWidget):
         port = self.get_port()
         try:
             if self._stir_controller is None:
-                self._stir_controller = StirController(port=port)
+                StirClass = DriverManager.instance().get_stir_controller_class()
+                self._stir_controller = StirClass(port=port)
             if self._stir_controller.start():
                 QMessageBox.information(self, "成功", "已启动搅拌马达")
             else:
@@ -225,7 +223,8 @@ class IKAEditorWidget(QWidget):
         port = self.get_port()
         try:
             if self._stir_controller is None:
-                self._stir_controller = StirController(port=port)
+                StirClass = DriverManager.instance().get_stir_controller_class()
+                self._stir_controller = StirClass(port=port)
             if self._stir_controller.stop():
                 QMessageBox.information(self, "成功", "已停止搅拌马达")
             else:
@@ -239,7 +238,8 @@ class IKAEditorWidget(QWidget):
         port = self.get_port()
         try:
             if self._stir_controller is None:
-                self._stir_controller = StirController(port=port)
+                StirClass = DriverManager.instance().get_stir_controller_class()
+                self._stir_controller = StirClass(port=port)
             if self._stir_controller.control(speed):
                 QMessageBox.information(self, "成功", f"已设置转速 {speed} RPM 并启动搅拌")
             else:

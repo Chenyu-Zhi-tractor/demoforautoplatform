@@ -15,6 +15,8 @@ class TaskType(Enum):
     IKA_STOP = "ika_stop"               # IKA停止
     IKA_SET_SPEED = "ika_set_speed"     # IKA设置转速
     IKA_CONTROL = "ika_control"         # IKA设置并启动
+    COOLING_BATH_SET_TEMP = "cooling_bath_set_temp" # 冷却浴设置温度
+
 
 
 @dataclass
@@ -61,6 +63,9 @@ class Task:
         elif self.task_type == TaskType.IKA_CONTROL:
             speed = self.params.get('speed', 0)
             return f"🌀 设置 {speed} RPM 并启动"
+        elif self.task_type == TaskType.COOLING_BATH_SET_TEMP:
+            temp = self.params.get('temp', 0)
+            return f"❄️ 冷却浴设定 {temp} ℃"
         return f"未知任务: {self.name}"
     
     def get_icon(self) -> str:
@@ -70,6 +75,8 @@ class Task:
         elif self.task_type in [TaskType.IKA_START, TaskType.IKA_STOP, 
                                 TaskType.IKA_SET_SPEED, TaskType.IKA_CONTROL]:
             return "🌀"
+        elif self.task_type == TaskType.COOLING_BATH_SET_TEMP:
+            return "❄️"
         return "❓"
 
 
@@ -241,6 +248,15 @@ class TaskQueue:
             task_type=TaskType.IKA_CONTROL,
             name=f"设置 {speed} 并启动",
             params={'speed': speed}
+        )
+        return self.add_task(task, index)
+
+    def add_cooling_bath_set_temp(self, temp: float, index: int = -1) -> int:
+        """添加冷却浴设置温度任务"""
+        task = Task(
+            task_type=TaskType.COOLING_BATH_SET_TEMP,
+            name=f"冷却浴设温 {temp}℃",
+            params={'temp': temp}
         )
         return self.add_task(task, index)
     
