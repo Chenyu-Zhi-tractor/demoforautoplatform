@@ -25,9 +25,9 @@ demo主体分为
 负责硬件控制核心
 (1)hardware内包含：
 硬件的接口、虚拟接口
-(a)
-(b)
-(c)
+(a) ika控制
+(b) 步进电机控制
+(c) 泵控制
 以及虚拟/真实接口切换组件
 (2)
 4.logs
@@ -54,4 +54,4 @@ def get_heater_controller_class(self):
 from core.hardware.driver_manager import DriverManager
 HeaterClass = DriverManager.instance().get_heater_controller_class()
 self.heater = HeaterClass(port="COMx")
-self.heater.set_temperature(100)r
+self.heater.set_temperature(100)

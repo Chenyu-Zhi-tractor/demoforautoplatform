@@ -89,5 +89,21 @@ class DriverManager:
                 from .virtual_mode.stepper_test import StepperController
                 return StepperController
 
+    # === Extraction Stepper (Dual) ===
+
+    def get_extraction_stepper_controller_class(self) -> Type:
+        """获取当前模式下的双步进电机控制器类（单板单口）"""
+        if self.use_virtual:
+            from .virtual_mode.extraction_steepper import ExtractionStepperController
+            return ExtractionStepperController
+        else:
+            try:
+                from .real_mode.extraction_steepper import ExtractionStepperController
+                return ExtractionStepperController
+            except ImportError:
+                print("Warning: Real Extraction Stepper driver not found, falling back to test driver.")
+                from .virtual_mode.extraction_steepper import ExtractionStepperController
+                return ExtractionStepperController
+
     # === 未来可在此处扩展其他硬件 ===
     # def get_heater_controller_class(self): ...

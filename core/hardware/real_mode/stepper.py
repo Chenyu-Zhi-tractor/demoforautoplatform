@@ -20,7 +20,7 @@ import serial
 import time
 import sys
 
-PORT = "COM13"  # 默认端口，需要根据实际调整
+PORT = "COM9"  # 默认端口，需要根据实际调整
 
 
 class StepperController:
@@ -34,7 +34,7 @@ class StepperController:
         初始化步进电机控制器
 
         Args:
-            port: 串口号，默认 COM13
+            port: 串口号，默认 COM9
         """
         self.port = port
         self.ser = None
