@@ -73,5 +73,21 @@ class DriverManager:
                 from .virtual_mode.coolingbath_test import CoolingBathController
                 return CoolingBathController
 
+    # === Arduino 步进电机 (Stepper) ===
+
+    def get_stepper_controller_class(self) -> Type:
+        """获取当前模式下的步进电机控制器类"""
+        if self.use_virtual:
+            from .virtual_mode.stepper_test import StepperController
+            return StepperController
+        else:
+            try:
+                from .real_mode.stepper import StepperController
+                return StepperController
+            except ImportError:
+                print("Warning: Real Stepper driver not found, falling back to test driver.")
+                from .virtual_mode.stepper_test import StepperController
+                return StepperController
+
     # === 未来可在此处扩展其他硬件 ===
     # def get_heater_controller_class(self): ...

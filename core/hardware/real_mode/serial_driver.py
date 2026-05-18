@@ -539,6 +539,10 @@ class PumpController:
         if self.ser and self.ser.is_open:
             self.ser.close()
             self._log("串口已关闭")
+
+    def get_commands_log(self):
+        """获取命令日志"""
+        return list(self.commands_log)
     
     def __enter__(self):
         return self

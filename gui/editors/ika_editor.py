@@ -41,7 +41,9 @@ class IKAEditorWidget(QWidget):
         header_layout.addWidget(QLabel("串口:"))
         self.port_combo = QComboBox()
         self.port_combo.setEditable(True)
-        self.port_combo.addItems(["COM10", "COM11", "COM12", "COM13", "COM14", "COM15"])
+        self.port_combo.addItems(["COM1", "COM2", "COM3", "COM4", "COM5", 
+                                   "COM6", "COM7", "COM8", "COM9", "COM10",
+                                   "COM11", "COM12", "COM13", "COM14", "COM15"])
         self.port_combo.setCurrentText("COM10")
         self.port_combo.setMinimumWidth(100)
         header_layout.addWidget(self.port_combo)

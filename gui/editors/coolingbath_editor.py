@@ -41,7 +41,9 @@ class CoolingBathEditorWidget(QWidget):
         self.port_combo = QComboBox()
         self.port_combo.setEditable(True)
         # 默认 COM9，也可加上其他常见端口
-        self.port_combo.addItems(["COM9", "COM10", "COM11", "COM12"])
+        self.port_combo.addItems(["COM1", "COM2", "COM3", "COM4", "COM5", 
+                                   "COM6", "COM7", "COM8", "COM9", "COM10",
+                                   "COM11", "COM12", "COM13", "COM14", "COM15"])
         self.port_combo.setCurrentText("COM9")
         self.port_combo.setMinimumWidth(100)
         header_layout.addWidget(self.port_combo)
