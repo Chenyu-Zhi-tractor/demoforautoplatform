@@ -17,6 +17,7 @@ class CoolingBathEditorWidget(QWidget):
     """低温恒温冷却浴控制编辑器"""
     
     task_added = pyqtSignal()  # 任务添加信号
+    switch_toggled = pyqtSignal(str, bool)  # 开关切换信号
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -86,6 +87,42 @@ class CoolingBathEditorWidget(QWidget):
         
         quick_layout.addStretch()
         layout.addWidget(quick_group)
+
+        # === 开关控制区（立即执行） ===
+        switch_group = QGroupBox("开关控制（立即执行）")
+        switch_group.setStyleSheet("""
+            QGroupBox {
+                color: #ecf0f1;
+                font-weight: bold;
+                border: 1px solid #27ae60;
+                margin-top: 10px;
+            }
+            QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top center; padding: 0 5px; }
+        """)
+        switch_layout = QHBoxLayout(switch_group)
+
+        self.btn_power = QPushButton("电源: 关")
+        self.btn_power.setCheckable(True)
+        self.btn_power.clicked.connect(lambda checked: self._on_switch_toggled("power", self.btn_power, checked))
+        switch_layout.addWidget(self.btn_power)
+
+        self.btn_circulation = QPushButton("循环: 关")
+        self.btn_circulation.setCheckable(True)
+        self.btn_circulation.clicked.connect(lambda checked: self._on_switch_toggled("circulation", self.btn_circulation, checked))
+        switch_layout.addWidget(self.btn_circulation)
+
+        self.btn_cooling = QPushButton("制冷: 关")
+        self.btn_cooling.setCheckable(True)
+        self.btn_cooling.clicked.connect(lambda checked: self._on_switch_toggled("cooling", self.btn_cooling, checked))
+        switch_layout.addWidget(self.btn_cooling)
+
+        self.btn_heating = QPushButton("加热: 关")
+        self.btn_heating.setCheckable(True)
+        self.btn_heating.clicked.connect(lambda checked: self._on_switch_toggled("heating", self.btn_heating, checked))
+        switch_layout.addWidget(self.btn_heating)
+
+        switch_layout.addStretch()
+        layout.addWidget(switch_group)
         
         # === 添加到队列区 ===
         queue_group = QGroupBox("添加到任务队列")
@@ -161,4 +198,17 @@ class CoolingBathEditorWidget(QWidget):
         task_queue.add_cooling_bath_set_temp(temp)
         QMessageBox.information(self, "成功", f"已添加任务: 冷却浴设温 {temp} ℃")
         self.task_added.emit()
+
+    def _on_switch_toggled(self, name: str, button: QPushButton, checked: bool):
+        """开关按钮切换回调"""
+        state_text = "开" if checked else "关"
+        label_map = {
+            "power": "电源",
+            "circulation": "循环",
+            "cooling": "制冷",
+            "heating": "加热",
+        }
+        label = label_map.get(name, name)
+        button.setText(f"{label}: {state_text}")
+        self.switch_toggled.emit(name, checked)
 

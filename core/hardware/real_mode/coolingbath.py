@@ -14,6 +14,15 @@ import serial
 import time
 
 PORT = "COM9"
+DEVICE_ADDRESS = 0x01
+FUNC_WRITE_SINGLE = 0x06
+
+# Register map (from protocol sheet)
+REG_TEMP_SET = 0x000B
+REG_POWER = 0x000E
+REG_CIRCULATION = 0x000F
+REG_COOLING = 0x0010
+REG_HEATING = 0x0011
 
 class CoolingBathController:
     """
@@ -135,6 +144,24 @@ class CoolingBathController:
             self._log("Warning: 未收到设备响应")
             return b''
 
+    def _write_single_register(self, register_address: int, value: int, label: str) -> bool:
+        """写单寄存器并校验响应长度"""
+        frame = self._build_frame(DEVICE_ADDRESS, FUNC_WRITE_SINGLE, register_address, value & 0xFFFF)
+        self._log(f"正在设置{label}: {value}")
+        response = self._send_recv(frame)
+
+        if len(response) == 8:
+            self._log(f"设置{label}成功")
+            return True
+
+        self._log(f"设置{label}失败，响应异常 (长度 {len(response)})")
+        return False
+
+    def _set_switch(self, register_address: int, on: bool, label: str) -> bool:
+        """通用开关控制"""
+        value = 1 if on else 0
+        return self._write_single_register(register_address, value, label)
+
     def set_temperature(self, temp: float) -> bool:
         """
         设置冷却浴目标温度
@@ -151,30 +178,29 @@ class CoolingBathController:
             # 处理负数 (Modbus通常使用补码，但在 Python 中 int 转 bytes 需要注意掩码)
             val_u16 = val_int & 0xFFFF
             
-            # 构造帧: 地址 0x01, 功能码 0x06 (写单个寄存器), 寄存器 0x000B (设定温度)
-            device_address = 0x01
-            function_code = 0x06
-            register_address = 0x000B
-            
-            frame = self._build_frame(device_address, function_code, register_address, val_u16)
-            
-            self._log(f"正在设置温度为: {temp}℃")
-            response = self._send_recv(frame)
-            
-            # 简单校验响应长度
-            if len(response) == 8:
-                # 严格来说应该校验 CRC 和回显内容，这里暂只校验长度
-                self._log(f"设置温度成功: {temp}℃")
-                return True
-            else:
-                self._log(f"设置失败，响应异常 (长度 {len(response)})")
-                return False
+            return self._write_single_register(REG_TEMP_SET, val_u16, f"温度为 {temp}℃")
                 
         except Exception as e:
             self._log(f"设置温度过程中发生错误: {e}")
             import traceback
             self._log(traceback.format_exc())
             return False
+
+    def set_power(self, on: bool) -> bool:
+        """电源开关"""
+        return self._set_switch(REG_POWER, on, "电源")
+
+    def set_circulation(self, on: bool) -> bool:
+        """循环开关"""
+        return self._set_switch(REG_CIRCULATION, on, "循环")
+
+    def set_cooling(self, on: bool) -> bool:
+        """制冷开关"""
+        return self._set_switch(REG_COOLING, on, "制冷")
+
+    def set_heating(self, on: bool) -> bool:
+        """加热开关"""
+        return self._set_switch(REG_HEATING, on, "加热")
 
 if __name__ == "__main__":
     # 简单测试

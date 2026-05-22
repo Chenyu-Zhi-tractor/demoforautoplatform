@@ -141,6 +141,7 @@ class MainWindow(QMainWindow):
         # 冷却浴任务配置
         self.cooling_editor = CoolingBathEditorWidget()
         # 目前主要用于手动控制，没有task_added信号
+        self.cooling_editor.switch_toggled.connect(self._on_cooling_bath_switch_toggled)
         self.task_tabs.addTab(self.cooling_editor, "❄️ 冷却浴")
 
         # 萃取任务配置
@@ -195,6 +196,7 @@ class MainWindow(QMainWindow):
         self._pump_controller = None
         self._stir_controller = None
         self._extraction_controller = None
+        self._cooling_controller = None
         
         # 自动检查文件
         self._check_init_file()
@@ -217,6 +219,13 @@ class MainWindow(QMainWindow):
             
         self._stir_controller = None
         self._extraction_controller = None
+        if self._cooling_controller:
+            try:
+                if hasattr(self._cooling_controller, 'close'):
+                    self._cooling_controller.close()
+            except:
+                pass
+            self._cooling_controller = None
         
         mode_str = "虚拟模式" if checked else "真实模式 (Serial)"
         self.statusBar().showMessage(f"已切换到: {mode_str}")
@@ -521,6 +530,41 @@ class MainWindow(QMainWindow):
         finally:
             controller.close()
 
+    def _get_cooling_bath_controller(self, port: str):
+        """获取或创建冷却浴控制器"""
+        if self._cooling_controller is None or getattr(self._cooling_controller, 'port', None) != port:
+            if self._cooling_controller and hasattr(self._cooling_controller, 'close'):
+                try:
+                    self._cooling_controller.close()
+                except:
+                    pass
+            BathClass = DriverManager.instance().get_cooling_bath_controller_class()
+            self._cooling_controller = BathClass(port=port)
+            self._cooling_controller.set_logger(lambda x: None)
+        return self._cooling_controller
+
+    def _on_cooling_bath_switch_toggled(self, switch_name: str, on: bool):
+        """冷却浴开关回调"""
+        port = self.cooling_editor.get_port()
+        controller = self._get_cooling_bath_controller(port)
+
+        action_map = {
+            "power": controller.set_power,
+            "circulation": controller.set_circulation,
+            "cooling": controller.set_cooling,
+            "heating": controller.set_heating,
+        }
+        action = action_map.get(switch_name)
+        if action is None:
+            QMessageBox.warning(self, "错误", f"未知开关类型: {switch_name}")
+            return
+
+        if action(on):
+            state_text = "开" if on else "关"
+            self.statusBar().showMessage(f"冷却浴 {switch_name} 已切换为: {state_text}")
+        else:
+            QMessageBox.warning(self, "失败", "开关操作失败，请检查连接或参数")
+
     def _execute_extraction_stir(self, task, logger, index):
         port = self.extraction_editor.get_port()
         speed = task.params.get('speed', 0)
@@ -707,6 +751,11 @@ class MainWindow(QMainWindow):
         if self._stir_controller:
             try:
                 self._stir_controller.close()
+            except:
+                pass
+        if self._cooling_controller:
+            try:
+                self._cooling_controller.close()
             except:
                 pass
         event.accept()
