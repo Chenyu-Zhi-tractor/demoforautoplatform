@@ -137,10 +137,7 @@ class ExtractionStepperController:
 if __name__ == "__main__":
     controller = ExtractionStepperController(port="COM9")
     try:
-        controller.set_speed_rps("B", 1.5)
-        time.sleep(0.2)
-        # controller.rotate_revolutions("A", 0.25)
-        time.sleep(0.2)
+        controller.set_speed_rps("B", 2)
         controller.rotate_revolutions("B", 0.25)
     finally:
         controller.close()

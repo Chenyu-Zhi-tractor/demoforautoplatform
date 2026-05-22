@@ -15,6 +15,7 @@ from gui.dialogs.setup_dialog import SetupDialog
 from gui.editors.pump_editor import PumpEditorWidget
 from gui.editors.ika_editor import IKAEditorWidget
 from gui.editors.coolingbath_editor import CoolingBathEditorWidget
+from gui.editors.extraction_editor import ExtractionEditorWidget
 from gui.task_queue_widget import TaskQueueWidget
 from gui.task_queue import task_queue, TaskType
 
@@ -141,6 +142,11 @@ class MainWindow(QMainWindow):
         self.cooling_editor = CoolingBathEditorWidget()
         # 目前主要用于手动控制，没有task_added信号
         self.task_tabs.addTab(self.cooling_editor, "❄️ 冷却浴")
+
+        # 萃取任务配置
+        self.extraction_editor = ExtractionEditorWidget()
+        self.extraction_editor.task_added.connect(self._on_task_added)
+        self.task_tabs.addTab(self.extraction_editor, "🧪 萃取任务")
         
         left_splitter.addWidget(self.task_tabs)
         left_splitter.setSizes([600, 300])  # 上方占2/3，下方占1/3
@@ -188,6 +194,7 @@ class MainWindow(QMainWindow):
         self.config_data = None
         self._pump_controller = None
         self._stir_controller = None
+        self._extraction_controller = None
         
         # 自动检查文件
         self._check_init_file()
@@ -209,6 +216,7 @@ class MainWindow(QMainWindow):
             self._pump_controller = None
             
         self._stir_controller = None
+        self._extraction_controller = None
         
         mode_str = "虚拟模式" if checked else "真实模式 (Serial)"
         self.statusBar().showMessage(f"已切换到: {mode_str}")
@@ -335,6 +343,10 @@ class MainWindow(QMainWindow):
                             self._execute_ika_control(task, logger, i)
                         elif task.task_type == TaskType.COOLING_BATH_SET_TEMP:
                             self._execute_cooling_bath_set_temp(task, logger, i)
+                        elif task.task_type == TaskType.EXTRACTION_STIR:
+                            self._execute_extraction_stir(task, logger, i)
+                        elif task.task_type == TaskType.EXTRACTION_PISTON:
+                            self._execute_extraction_piston(task, logger, i)
                         
                         completed += 1
                         
@@ -508,6 +520,36 @@ class MainWindow(QMainWindow):
                 raise Exception("设定温度失败 (无响应或响应错误)")
         finally:
             controller.close()
+
+    def _execute_extraction_stir(self, task, logger, index):
+        port = self.extraction_editor.get_port()
+        speed = task.params.get('speed', 0)
+        seconds = task.params.get('seconds', 0)
+        revs = speed * seconds
+
+        logger.write(f"--> [萃取A搅拌] 端口:{port} 速度:{speed} rps 时间:{seconds} s")
+
+        if self._extraction_controller is None:
+            ControllerClass = DriverManager.instance().get_extraction_stepper_controller_class()
+            self._extraction_controller = ControllerClass(port=port)
+        self._extraction_controller.set_logger(lambda x: None)
+
+        self._extraction_controller.set_speed_rps("A", speed)
+        self._extraction_controller.rotate_revolutions("A", revs)
+        logger.log_generic_success(index, f"萃取A搅拌完成 {speed} rps, {seconds} s")
+
+    def _execute_extraction_piston(self, task, logger, index):
+        port = self.extraction_editor.get_port()
+        logger.write(f"--> [萃取B活塞] 端口:{port} 速度:2 rps 圈数:0.25")
+
+        if self._extraction_controller is None:
+            ControllerClass = DriverManager.instance().get_extraction_stepper_controller_class()
+            self._extraction_controller = ControllerClass(port=port)
+        self._extraction_controller.set_logger(lambda x: None)
+
+        self._extraction_controller.set_speed_rps("B", 2)
+        self._extraction_controller.rotate_revolutions("B", 0.25)
+        logger.log_generic_success(index, "萃取B活塞完成 0.25 圈")
 
     # ==================== 文件操作 ====================
     

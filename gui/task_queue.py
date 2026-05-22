@@ -16,6 +16,8 @@ class TaskType(Enum):
     IKA_SET_SPEED = "ika_set_speed"     # IKA设置转速
     IKA_CONTROL = "ika_control"         # IKA设置并启动
     COOLING_BATH_SET_TEMP = "cooling_bath_set_temp" # 冷却浴设置温度
+    EXTRACTION_STIR = "extraction_stir" # 萃取A电机搅拌
+    EXTRACTION_PISTON = "extraction_piston" # 萃取B电机活塞
 
 
 
@@ -66,6 +68,12 @@ class Task:
         elif self.task_type == TaskType.COOLING_BATH_SET_TEMP:
             temp = self.params.get('temp', 0)
             return f"❄️ 冷却浴设定 {temp} ℃"
+        elif self.task_type == TaskType.EXTRACTION_STIR:
+            speed = self.params.get('speed', 0)
+            seconds = self.params.get('seconds', 0)
+            return f"🧪 萃取搅拌 {speed} rps, {seconds}s"
+        elif self.task_type == TaskType.EXTRACTION_PISTON:
+            return f"🧪 萃取活塞 0.25 圈"
         return f"未知任务: {self.name}"
     
     def get_icon(self) -> str:
@@ -77,6 +85,8 @@ class Task:
             return "🌀"
         elif self.task_type == TaskType.COOLING_BATH_SET_TEMP:
             return "❄️"
+        elif self.task_type in [TaskType.EXTRACTION_STIR, TaskType.EXTRACTION_PISTON]:
+            return "🧪"
         return "❓"
 
 
@@ -257,6 +267,24 @@ class TaskQueue:
             task_type=TaskType.COOLING_BATH_SET_TEMP,
             name=f"冷却浴设温 {temp}℃",
             params={'temp': temp}
+        )
+        return self.add_task(task, index)
+
+    def add_extraction_stir(self, speed: float, seconds: float, index: int = -1) -> int:
+        """添加萃取A电机搅拌任务"""
+        task = Task(
+            task_type=TaskType.EXTRACTION_STIR,
+            name=f"萃取搅拌 {speed}rps {seconds}s",
+            params={'speed': speed, 'seconds': seconds}
+        )
+        return self.add_task(task, index)
+
+    def add_extraction_piston(self, index: int = -1) -> int:
+        """添加萃取B电机活塞任务"""
+        task = Task(
+            task_type=TaskType.EXTRACTION_PISTON,
+            name="萃取活塞 0.25圈",
+            params={'speed': 2, 'revs': 0.25}
         )
         return self.add_task(task, index)
     
