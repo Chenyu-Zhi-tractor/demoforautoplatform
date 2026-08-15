@@ -1,0 +1,24 @@
+{
+  "settings": {
+    "pump_count": 4,
+    "port_count": 8
+  },
+  "connections": [],
+  "liquids": [
+    {
+      "id": "0",
+      "name": "1111",
+      "pump": 3,
+      "port": 7
+    }
+  ],
+  "gases": [],
+  "containers": [
+    {
+      "id": "0",
+      "name": "2",
+      "pump": 3,
+      "port": 2
+    }
+  ]
+}

@@ -141,6 +141,7 @@ class MainWindow(QMainWindow):
         # 冷却浴任务配置
         self.cooling_editor = CoolingBathEditorWidget()
         # 目前主要用于手动控制，没有task_added信号
+        self.cooling_editor.temp_set_requested.connect(self._on_cooling_bath_temp_set_requested)
         self.cooling_editor.switch_toggled.connect(self._on_cooling_bath_switch_toggled)
         self.task_tabs.addTab(self.cooling_editor, "❄️ 冷却浴")
 
@@ -542,6 +543,16 @@ class MainWindow(QMainWindow):
             self._cooling_controller = BathClass(port=port)
             self._cooling_controller.set_logger(lambda x: None)
         return self._cooling_controller
+
+    def _on_cooling_bath_temp_set_requested(self, temp: float):
+        """冷却浴设温请求"""
+        port = self.cooling_editor.get_port()
+        controller = self._get_cooling_bath_controller(port)
+
+        if controller.set_temperature(temp):
+            QMessageBox.information(self, "成功", f"温度已设定为 {temp} ℃")
+        else:
+            QMessageBox.warning(self, "失败", "设定温度失败，请检查连接或参数")
 
     def _on_cooling_bath_switch_toggled(self, switch_name: str, on: bool):
         """冷却浴开关回调"""

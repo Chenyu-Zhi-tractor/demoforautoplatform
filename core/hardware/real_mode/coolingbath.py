@@ -13,7 +13,7 @@
 import serial
 import time
 
-PORT = "COM9"
+PORT = "COM11"
 DEVICE_ADDRESS = 0x01
 FUNC_WRITE_SINGLE = 0x06
 
@@ -35,7 +35,7 @@ class CoolingBathController:
         初始化冷却浴控制器
         
         Args:
-            port: 串口号，默认 COM9
+            port: 串口号，默认 COM11
         """
         self.port = port
         self.ser = None
@@ -177,11 +177,12 @@ class CoolingBathController:
             val_int = int(temp * 10)
             # 处理负数 (Modbus通常使用补码，但在 Python 中 int 转 bytes 需要注意掩码)
             val_u16 = val_int & 0xFFFF
-            
+            print(f"success")
             return self._write_single_register(REG_TEMP_SET, val_u16, f"温度为 {temp}℃")
                 
         except Exception as e:
             self._log(f"设置温度过程中发生错误: {e}")
+            print(f"error")
             import traceback
             self._log(traceback.format_exc())
             return False
@@ -204,8 +205,8 @@ class CoolingBathController:
 
 if __name__ == "__main__":
     # 简单测试
-    controller = CoolingBathController(port="COM9")
+    controller = CoolingBathController(port="COM11")
     try:
-        controller.set_temperature(-20)
+        controller.set_temperature(-19)
     finally:
         controller.close()

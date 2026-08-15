@@ -7,9 +7,6 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import pyqtSignal
 
-# 导入硬件驱动管理器
-from core.hardware.driver_manager import DriverManager
-
 # 导入统一任务队列
 from gui.task_queue import task_queue 
 
@@ -17,6 +14,7 @@ class CoolingBathEditorWidget(QWidget):
     """低温恒温冷却浴控制编辑器"""
     
     task_added = pyqtSignal()  # 任务添加信号
+    temp_set_requested = pyqtSignal(float)  # 设温请求信号
     switch_toggled = pyqtSignal(str, bool)  # 开关切换信号
     
     def __init__(self, parent=None):
@@ -171,26 +169,7 @@ class CoolingBathEditorWidget(QWidget):
     def _on_set_temp(self):
         """设定温度的回调"""
         temp = self.temp_spin.value()
-        port = self.get_port()
-        
-        try:
-            # 始终获取最新的类（可能刚刚切换了虚拟/真实模式）
-            ControllerClass = DriverManager.instance().get_cooling_bath_controller_class()
-            
-            # 使用临时控制器进行单次操作
-            # 如果需要保持连接，可以像 StirController 那样缓存 self._controller
-            # 这里为了简单起见，每次创建新实例（反正 init 只是存端口）
-            controller = ControllerClass(port=port)
-            
-            if controller.set_temperature(temp):
-                QMessageBox.information(self, "成功", f"温度已设定为 {temp} ℃")
-            else:
-                QMessageBox.warning(self, "失败", "设定温度失败，请检查连接或参数")
-            
-            controller.close()
-            
-        except Exception as e:
-            QMessageBox.critical(self, "错误", f"执行出错:\n{str(e)}")
+        self.temp_set_requested.emit(temp)
 
     def _on_add_task(self):
         """添加到队列的回调"""
