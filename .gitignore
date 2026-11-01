@@ -15,24 +15,21 @@ env/
 .vscode/
 .idea/
 *.pro.user
-*.qmlc
 
 # ---- Arduino PlatformIO 构建产物 (2026-05-18 那次误提交过 1.09MB) ----
 .pio/
 .pioenvs/
 .piolibdeps/
 
-# ---- 运行产物 ----
-*.spec
-*.log
-
-# ---- 渲染中间件 ----
-_record_run/_pages/
-_record_run/_pass1.pdf
-_record_run/_check.pdf
-_record_run/_crop_*.png
+# ---- 交付物与取证材料: 已移出源码仓库, 放在仓库同级目录 E:\AI_chem\202602\ ----
+# 实验记录 PDF (由 _record_run/render_pdf.py 生成)
+实验记录_化学实验自动化控制平台.pdf
+# 取证脚本 + 原始证据 (运行日志 / GUI 截图 / evidence.json / 渲染中间件)
+_record_run/
 
 # ---- 系统 ----
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# 注意: logs/*.txt 是反应实验原始记录, 属于项目资产, 故意不忽略
